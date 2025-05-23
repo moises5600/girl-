@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FECHAS IMPORTANTES - Carousel infinito</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #121212;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #eee;
+      user-select: none;
+      overflow-x: hidden;
+      overflow-y: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      padding: 20px 0;
+    }
+    h1 {
+      margin: 0 0 30px;
+      font-weight: 900;
+      font-size: 3rem;
+      letter-spacing: 0.1em;
+      color: #FF4081;
+      text-shadow: 0 0 8px #FF4081, 0 0 15px #FF4081;
+      user-select: none;
+    }
+    .carousel-container {
+      width: 100vw;
+      height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 0 30px;
+      box-sizing: border-box;
+      -webkit-overflow-scrolling: touch;
+    }
+    .image-card {
+      flex: 0 0 220px;
+      height: 100%;
+      max-height: 340px;
+      background: #1e1e1e;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(255,64,129,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      filter: brightness(0.7) blur(3px);
+      transition:
+        transform 0.3s ease,
+        filter 0.3s ease,
+        box-shadow 0.3s ease;
+      user-select: none;
+      position: relative;
+      overflow: hidden;
+      padding: 12px 12px 12px 12px;
+      box-sizing: border-box;
+    }
+    .image-card.selected {
+      filter: brightness(1) blur(0);
+      box-shadow: 0 12px 40px rgba(255,64,129,0.9);
+      transform: scale(1.3);
+      z-index: 10;
+    }
+    .image-wrapper {
+      width: 100%;
+      flex: 1 1 auto;
+      border-radius: 18px;
+      overflow: hidden;
+      pointer-events: none;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      user-select: none;
+      display: block;
+      border-radius: 18px;
+      transition: filter 0.3s ease;
+    }
+    /* Overlay date on bottom with fade-slide-up */
+    .overlay-date,
+    .overlay-elapsed {
+      position: absolute;
+      left: 0;
+      right: 0;
+      color: #FF80AB;
+      text-align: center;
+      padding: 6px 0;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      user-select: text;
+      text-shadow: 0 0 6px #FF80AB;
+      background: rgba(30, 30, 30, 0.6);
+      border-radius: 0 0 18px 18px;
+      opacity: 0;
+      transform: translateY(30%);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      pointer-events: none;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    .overlay-date {
+      bottom: 36px;
+      font-size: 1.2rem;
+    }
+    .overlay-elapsed {
+      bottom: 0;
+      font-size: 1rem;
+      font-style: italic;
+      color: #e0c4d6;
+      text-shadow: 0 0 4px #e0c4d6;
+    }
+    .image-card.selected .overlay-date,
+    .image-card.selected .overlay-elapsed {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      user-select: auto;
+    }
+
+    /* Scrollbar styles for carousel */
+    .carousel-container::-webkit-scrollbar {
+      height: 8px;
+    }
+    .carousel-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .carousel-container::-webkit-scrollbar-thumb {
+      background: #FF4081AA;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>FECHAS BONITAS</h1>
+
+  <div class="carousel-container" id="carouselContainer">
+    <!-- Cards with images, date overlay and elapsed time overlay -->
+  </div>
+
+<script>
+  const carouselContainer = document.getElementById('carouselContainer');
+
+  const items = [
+    { image: 'beso.jpg', date: '26/03/25' },
+    { image: 'beso1.jpg', date: '01/01/20' },
+    { image: 'beso2.jpg', date: '15/06/22' },
+    { image: 'beso3.jpg', date: '10/11/18' },
+    { image: 'beso4.jpg', date: '05/09/21' },
+    { image: 'beso5.jpg', date: '30/12/19' }
+  ];
+
+  function parseDate(dateStr) {
+    const parts = dateStr.split('/');
+    let day = parseInt(parts[0], 10);
+    let month = parseInt(parts[1], 10) - 1;
+    let year = parseInt(parts[2], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month, day, 0, 0, 0);
+  }
+
+  function getElapsedTimeHMS(pastDate) {
+    const now = new Date();
+    let diffMs = now - pastDate;
+    if (diffMs < 0) return 'Fecha en el futuro';
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    diffMs -= hours * 1000 * 60 * 60;
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    diffMs -= minutes * 1000 * 60;
+    const seconds = Math.floor(diffMs / 1000);
+
+    const hStr = hours.toString().padStart(2, '0');
+    const mStr = minutes.toString().padStart(2, '0');
+    const sStr = seconds.toString().padStart(2, '0');
+
+    return `${hStr}:${mStr}:${sStr}`;
+  }
+
+  let selectedIndex = 0;
+
+  items.forEach(({image, date}, i) => {
+    const card = document.createElement('div');
+    card.className = 'image-card';
+
+    const imageWrapper = document.createElement('div');
+    imageWrapper.className = 'image-wrapper';
+
+    const img = document.createElement('img');
+    img.src = `imagen/${image}`;
+    img.alt = `Imagen ${i + 1}`;
+
+    imageWrapper.appendChild(img);
+
+    const overlayDate = document.createElement('div');
+    overlayDate.className = 'overlay-date';
+    overlayDate.textContent = date;
+
+    const overlayElapsed = document.createElement('div');
+    overlayElapsed.className = 'overlay-elapsed';
+    overlayElapsed.textContent = 'Calculando...';
+
+    card.appendChild(imageWrapper);
+    card.appendChild(overlayDate);
+    card.appendChild(overlayElapsed);
+
+    card.addEventListener('click', () => {
+      selectedIndex = i;
+      updateSelection();
+      scrollToCenter(card);
+      updateElapsedTime();
+    });
+
+    carouselContainer.appendChild(card);
+  });
+
+  const cards = carouselContainer.children;
+
+  function updateSelection() {
+    for(let i = 0; i < cards.length; i++) {
+      cards[i].classList.toggle('selected', i === selectedIndex);
+    }
+  }
+
+  // Function to center the selected element
+  function scrollToCenter(element) {
+    const containerRect = carouselContainer.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+    const offset = elementRect.left - containerRect.left - (containerRect.width / 2) + (elementRect.width / 2);
+    carouselContainer.scrollBy({left: offset, behavior: 'smooth'});
+  }
+
+  function updateElapsedTime() {
+    const card = cards[selectedIndex];
+    if (!card) return;
+    const overlayElapsed = card.querySelector('.overlay-elapsed');
+    const overlayDate = card.querySelector('.overlay-date');
+    if (!overlayElapsed || !overlayDate) return;
+
+    const pastDate = parseDate(overlayDate.textContent);
+    let elapsedStr = getElapsedTimeHMS(pastDate);
+    overlayElapsed.textContent = `Tiempo transcurrido: ${elapsedStr}`;
+  }
+
+  updateSelection();
+
+  window.requestAnimationFrame(() => {
+    scrollToCenter(cards[selectedIndex]);
+    updateElapsedTime();
+  });
+
+  setInterval(() => {
+    updateElapsedTime();
+  }, 1000);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') {
+      selectedIndex--;
+      if (selectedIndex < 0) {
+        selectedIndex = cards.length - 1;
+      }
+      updateSelection();
+      scrollToCenter(cards[selectedIndex]);
+      updateElapsedTime();
+    } else if (e.key === 'ArrowRight') {
+      selectedIndex++;
+      if (selectedIndex >= cards.length) {
+        selectedIndex = 0;
+      }
+      updateSelection();
+      scrollToCenter(cards[selectedIndex]);
+      updateElapsedTime();
+    }
+  });
+</script>
+
+</body>
+</html>
+
